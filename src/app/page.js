@@ -1,40 +1,66 @@
-import dynamic from 'next/dynamic';
+'use client'; // این صفحه سمت کلاینت اجرا می‌شود
 
-// چون chartjs فقط سمت کلاینت کار می‌کنه باید دینامیک لود کنیم
-const UserChart = dynamic(() => import('./components/UserChart'), { ssr: false });
+import { useEffect, useState } from 'react';
+import './styles.css'; // وارد کردن استایل‌ها
+import UserChart from './components/UserChart'; // کامپوننت نمودار
 
-async function getUsers() {
-  const res = await fetch('https://jsonplaceholder.typicode.com/users');
-  if (!res.ok) throw new Error("Failed to fetch users");
-  return res.json();
-}
+export default function Home() {
+  // تعریف state برای کاربران
+  const [users, setUsers] = useState([]);
+  // تعریف state برای نمایش حالت loading
+  const [loading, setLoading] = useState(true);
 
-export default async function Home() {
-  const users = await getUsers();
+  // گرفتن داده‌ها از API وقتی کامپوننت لود می‌شود
+  useEffect(() => {
+    fetch('https://jsonplaceholder.typicode.com/users') // درخواست به API
+      .then(res => res.json()) // تبدیل پاسخ به JSON
+      .then(data => {
+        setUsers(data); // ذخیره داده‌ها در state
+        setLoading(false); // پایان loading
+      })
+      .catch(() => setLoading(false)); // در صورت خطا هم loading را قطع کن
+  }, []);
 
+  // نمایش loading تا وقتی داده‌ها آماده نشده‌اند
+  if (loading) {
+    return (
+      <main className="loading">
+        <p>در حال بارگذاری...</p>
+      </main>
+    );
+  }
+
+  // نمایش جدول و نمودار وقتی داده‌ها آماده شدند
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+    <main>
       <h1>لیست کاربران</h1>
 
-      <table border="1" cellPadding="10" cellSpacing="0" style={{ marginTop: "1rem", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th>نام</th>
-            <th>ایمیل</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
+      {/* جدول ساده با نام و ایمیل کاربران */}
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>ایمیل</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user.id}>
+                <td>{user.name}</td>
+                <td>{user.email}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <h2 style={{ marginTop: "3rem" }}>نمودار تعداد کاربران</h2>
-      <UserChart users={users} />
+      <h2>نمودار کاربران</h2>
+
+      {/* نمودار کاربران */}
+      <div className="chart-wrapper">
+        <UserChart users={users} />
+      </div>
     </main>
   );
 }
